@@ -20,6 +20,7 @@ last_time_stamp = ""
 CROISSANTS_PRICE = ""
 JAMS_PRICE = ""
 PICNIC_BASKET2_PRICE = ""
+PICNIC_BASKET1_PRICE = ""
 
 # 提取价格
 for index, row in df.iterrows():
@@ -49,7 +50,7 @@ for index, row in df.iterrows():
 Jams = np.array(Jams)
 Croissants = np.array(Croissants)
 
-X = np.column_stack((Jams, Croissants))
+X = np.column_stack(Jams, Croissants)
 
 # 拟合模型
 model = LinearRegression()
@@ -61,8 +62,6 @@ print("Coefficients (b1 for Jams^2, b2 for Croissants^2):", model.coef_)
 # 预测 + 残差
 y_pred = model.predict(X)
 residuals = np.array(PICNIC_BASKET2) - y_pred
-
-
 
 # 残差分布图
 plt.figure(figsize=(8, 4))
@@ -86,14 +85,6 @@ else:
 mse = mean_squared_error(PICNIC_BASKET2, y_pred)
 print("mse = ", mse)
 
-print(np.mean(residuals))
-
-lower_residual = np.percentile(residuals, 5)
-upper_residual = np.percentile(residuals, 95)
-
-print("5th percentile:", lower_residual)
-print("95th percentile:", upper_residual)
-
 # 实际 vs 预测
 plt.figure(figsize=(10, 5))
 plt.plot(PICNIC_BASKET2, label='Actual', marker='o')
@@ -103,9 +94,21 @@ plt.legend()
 plt.grid(True)
 plt.show()
 
+# 将 y 转为 NumPy 数组
+y = np.array(PICNIC_BASKET2)
+
+# 计算下5%和上95%分位数
+lower_bound = np.percentile(y, 5)
+upper_bound = np.percentile(y, 95)
+
+print("5th percentile:", lower_bound)
+print("95th percentile:", upper_bound)
+
 plt.figure(figsize=(10, 5))
 plt.plot(PICNIC_BASKET2, label='Actual', marker='o')
 plt.plot(y_pred, label='Predicted', marker='x')
+plt.axhline(lower_bound, color='red', linestyle='--', label='5th Percentile')
+plt.axhline(upper_bound, color='green', linestyle='--', label='95th Percentile')
 plt.title("Actual vs Predicted PICNIC_BASKET2 Prices (with 5% bounds)")
 plt.legend()
 plt.grid(True)
