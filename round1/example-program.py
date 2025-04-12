@@ -35,7 +35,7 @@ class Trader:
                     # The code below therefore sends a BUY order at the price level of the ask,
                     # with the same quantity
                     # We expect this order to trade with the sell order
-                    print("BUY", str(-best_ask_volume) + "x", best_ask)
+                    # print("BUY", str(-best_ask_volume) + "x", best_ask)
                     orders.append(Order(product, best_ask, -best_ask_volume))
 
             # The below code block is similar to the one above,
@@ -46,7 +46,7 @@ class Trader:
                 best_bid = max(order_depth.buy_orders.keys())
                 best_bid_volume = order_depth.buy_orders[best_bid]
                 if best_bid > acceptable_price:
-                    print("SELL", str(best_bid_volume) + "x", best_bid)
+                    # print("SELL", str(best_bid_volume) + "x", best_bid)
                     orders.append(Order(product, best_bid, -best_bid_volume))
 
             # Add all the above the orders to the result dict

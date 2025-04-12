@@ -1,20 +1,15 @@
 """
-Two products: 
-RAINFOREST_RESIN: stable
-KELP: going up and down over time
+Round 1 Strategies: 
 
-position limit: 50
-
-In v0, our simple strategy is: 
-keep track of the average operation price. 
-lower: buy
-higher: sell
+(1). Rainforest Resin: 
+above a threshold: sell
+below a threshold: buy
 
 """
 
+
 from typing import Dict, List
 from datamodel import *
-import jsonpickle
 
 class Trader:
 
@@ -22,52 +17,88 @@ class Trader:
         # Initialize the method output dict as an empty dict
         result = {}
 
-        traderData = state.traderData
+        print(state.position)
+
         # Iterate over all the keys (the available products) contained in the order dephts
         for product in state.order_depths.keys():
             
             # Retrieve the Order Depth containing all the market BUY and SELL orders
             order_depth: OrderDepth = state.order_depths[product]
-
+            position: Position = 0
+            if product in state.position.keys():
+                position = state.position[product]
+            limit = 50
+            
             # Initialize the list of Orders to be sent as an empty list
             orders: list[Order] = []
 
-            # Note that this value of 1 is just a dummy value, you should likely change it!
-            acceptable_price = 10
+            if product == "RAINFOREST_RESIN":
 
-            # If statement checks if there are any SELL orders in the market
-            if len(order_depth.sell_orders) > 0:
+                buy_price = 10000 - 2 # we buy when below this
+                sell_price = 10000 + 2 # we sell when above this
 
-                # Sort all the available sell orders by their price,
-                # and select only the sell order with the lowest price
-                best_ask = min(order_depth.sell_orders.keys())
-                best_ask_volume = order_depth.sell_orders[best_ask]
+                if len(order_depth.sell_orders) > 0: # if there are any SELL orders in the market
+                    prices = list(order_depth.sell_orders.keys())
+                    prices.sort() # sort from small to large
 
-                    # Check if the lowest ask (sell order) is lower than the above defined fair value
-                if best_ask < acceptable_price:
+                    for price in prices:
+                        if price <= buy_price: # buy it
+                            amount = -order_depth.sell_orders[price]
+                            buy_amount = min(amount, limit - position)
+                            position += buy_amount
+                            print(f"someone sell at {price}. we buy {buy_amount}. ")
+                            if buy_amount:
+                                orders.append(Order(product, price, buy_amount))
+                        else:
+                            break # all the rest prices are not good
 
-                    # In case the lowest ask is lower than our fair value,
-                    # This presents an opportunity for us to buy cheaply
-                    # The code below therefore sends a BUY order at the price level of the ask,
-                    # with the same quantity
-                    # We expect this order to trade with the sell order
-                    print("BUY", str(-best_ask_volume) + "x", best_ask)
-                    orders.append(Order(product, best_ask, -best_ask_volume))
+                if len(order_depth.buy_orders) > 0: # if there are any BUY orders in the market
+                    prices = list(order_depth.buy_orders.keys())
+                    prices.sort()
+                    prices.reverse() # sort fromm large to small
 
-            # The below code block is similar to the one above,
-            # the difference is that it find the highest bid (buy order)
-            # If the price of the order is higher than the fair value
-            # This is an opportunity to sell at a premium
-            if len(order_depth.buy_orders) != 0:
-                best_bid = max(order_depth.buy_orders.keys())
-                best_bid_volume = order_depth.buy_orders[best_bid]
-                if best_bid > acceptable_price:
-                    print("SELL", str(best_bid_volume) + "x", best_bid)
-                    orders.append(Order(product, best_bid, -best_bid_volume))
+                    for price in prices:
+                        if price >= sell_price: # sell it
+                            amount = order_depth.buy_orders[price]
+                            sell_amount = min(amount, position + limit)
+                            position -= sell_amount
+                            if sell_amount:
+                                orders.append(Order(product, price, -sell_amount))
+            
+            # if product == "SQUID_INK":
+            #     buy_price = 1971 - 90 # we buy when below this
+            #     sell_price = 1971 + 136 # we sell when above this
+
+            #     if len(order_depth.sell_orders) > 0: # if there are any SELL orders in the market
+            #         prices = list(order_depth.sell_orders.keys())
+            #         prices.sort() # sort from small to large
+
+            #         for price in prices:
+            #             if price <= buy_price: # buy it
+            #                 amount = -order_depth.sell_orders[price]
+            #                 buy_amount = min(amount, limit - position)
+            #                 position += buy_amount
+            #                 if buy_amount:
+            #                     orders.append(Order(product, price, buy_amount))
+            #             else:
+            #                 break # all the rest prices are not good
+
+            #     if len(order_depth.buy_orders) > 0: # if there are any BUY orders in the market
+            #         prices = list(order_depth.buy_orders.keys())
+            #         prices.sort()
+            #         prices.reverse() # sort fromm large to small
+
+            #         for price in prices:
+            #             if price >= sell_price: # sell it
+            #                 amount = order_depth.buy_orders[price]
+            #                 sell_amount = min(amount, position + limit)
+            #                 position -= sell_amount
+            #                 if sell_amount:
+            #                     orders.append(Order(product, price, -sell_amount))
 
             # Add all the above the orders to the result dict
             result[product] = orders
-                
+
         traderData = "SAMPLE" # String value holding Trader state data required. It will be delivered as TradingState.traderData on next execution.
         
         conversions = 1 
